@@ -22,7 +22,7 @@ provide_data$vax <- provide_data$rotaarm
 # 2 = symptomatic
 symp_cox_fit <- survival::coxph(survival::Surv(ftime_all_40, all_inf_40 == 2) ~ vax + 
                                   gender + wk10_haz + num_hh_lt_5 + num_hh_sleep + fedu_bin + medu_bin +
-                                  inco + elec + gas + tv + toil_bin + food_avail_bin, 
+                                  inco + gas + tv + toil_bin + food_avail_bin, 
                                 data = provide_data,
                                 weights = provide_data$weight)
 
@@ -33,16 +33,17 @@ symp_cox_fit <- survival::coxph(survival::Surv(ftime_all_40, all_inf_40 == 2) ~ 
 # 2 = asymptomatic
 asymp_cox_fit <- survival::coxph(survival::Surv(ftime_all_40, all_inf_40 == 1) ~ vax + 
                                    gender + wk10_haz + num_hh_lt_5 + num_hh_sleep + fedu_bin + medu_bin +
-                                   inco + elec + gas + tv + toil_bin + food_avail_bin, 
+                                   inco + gas + tv + toil_bin + food_avail_bin, 
                                  data = provide_data,
                                  weights = provide_data$weight)
 
 symp_lr_fit <- glm(
   symp_ind_40 ~ vax + 
     gender + wk10_haz + num_hh_lt_5 + num_hh_sleep + fedu_bin + medu_bin +
-    inco + elec + gas + tv + toil_bin + food_avail_bin, 
+    inco + gas + tv + toil_bin + food_avail_bin, 
   # subset to infected ptcpt only
   data = provide_data[provide_data$all_inf_40 > 0, ],
+  weights = provide_data$weight[provide_data$all_inf_40 > 0],
   family = stats::binomial()
 )
 

@@ -7,7 +7,7 @@ here::i_am("provide_analysis_with_weights.R")
 #cove_data <- readRDS(here::here("analytic_data/final_asymp_data.Rds"))
 
 # provide data with weights
-provide_data <- readRDS(here::here("~/Documents/shigella_projects/provide_analysis/provide_data/ve_nai_provide.Rds"))
+provide_data <- readRDS(here::here("analysis_data/ve_nai_provide.Rds"))
 
 # drop one obs with missing wk10 (baseline) haz
 provide_data <- provide_data[-which(is.na(provide_data$wk10_haz)),]

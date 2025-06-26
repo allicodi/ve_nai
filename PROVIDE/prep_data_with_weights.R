@@ -218,7 +218,7 @@ prep_provide_data <- function(){
            severe) %>% # note- assuming this is severity of diarrhea episode?? can't find dictionary for diarrhea4
     group_by(sid) %>%
     mutate(ftime91_tac = if (any(rotads == 1)) min(daysbirth[rotads == 1]) else wk91_ageday) %>%
-    summarise(any_rotads_afe_wk91 = if_else(any(rotads == 1), 1, 0),
+    summarise(any_rotads_tac_wk91 = if_else(any(rotads == 1), 1, 0),
               ftime91_tac = first(ftime91_tac))
   
   data <- left_join(data, rota_ds_afe_wk91, by = c("sid"))
@@ -247,18 +247,25 @@ prep_provide_data <- function(){
            TEPEC_afe,
            severe) %>% # note- assuming this is severity of diarrhea episode?? can't find dictionary for diarrhea4
     group_by(sid) %>%
-    mutate(ftime52_tac = if (any(rotads == 1)) min(daysbirth[rotads == 1]) else wk52_ageday) %>%
-    summarise(any_rotads_afe_wk52 = if_else(any(rotads == 1), 1, 0),
-              ftime52_tac = first(ftime52_tac))
+    # ROTADS in this dataset != rotavirus_afe > 0.5; repeat using raw AFEs
+    mutate(ftime52_tac = if (any(rotads == 1)) min(daysbirth[rotads == 1]) else wk52_ageday,
+           ftime52_afe = if (any(rotavirus_afe > 0.5)) min(daysbirth[rotavirus_afe > 0.5]) else wk52_ageday) %>%
+    summarise(any_rotads_tac_wk52 = if_else(any(rotads == 1), 1, 0),
+              any_rotads_afe_wk52 = if_else(any(rotavirus_afe > 0.5), 1, 0),
+              ftime52_tac = first(ftime52_tac),
+              ftime52_afe = first(ftime52_afe))
   
   data <- left_join(data, rota_ds_afe_wk52, by = c("sid"))
   
   # If any NAs, assume no diarrhea; censoring time week 91/52
-  data$any_rotads_afe_wk91 <- ifelse(is.na(data$any_rotads_afe_wk91), 0, data$any_rotads_afe_wk91)
+  data$any_rotads_tac_wk91 <- ifelse(is.na(data$any_rotads_tac_wk91), 0, data$any_rotads_tac_wk91)
   data$ftime91_tac <- ifelse(is.na(data$ftime91_tac), data$wk91_ageday, data$ftime91_tac)
   
-  data$any_rotads_afe_wk52 <- ifelse(is.na(data$any_rotads_afe_wk52), 0, data$any_rotads_afe_wk52)
+  data$any_rotads_tac_wk52 <- ifelse(is.na(data$any_rotads_tac_wk52), 0, data$any_rotads_tac_wk52)
   data$ftime52_tac <- ifelse(is.na(data$ftime52_tac), data$wk52_ageday, data$ftime52_tac)
+  
+  data$any_rotads_afe_wk52 <- ifelse(is.na(data$any_rotads_afe_wk52), 0, data$any_rotads_afe_wk52)
+  data$ftime52_afe <- ifelse(is.na(data$ftime52_afe), data$wk52_ageday, data$ftime52_afe)
   
   # Antibiotic use
   abx_key <- c(
@@ -508,6 +515,10 @@ prep_provide_data <- function(){
                                                              "College degree")),
     )
   
+  data$elec <- ifelse(data$elec == 1, 1, 0)
+  data$gas <- ifelse(data$gas == 1, 1, 0)
+  data$tv <- ifelse(data$tv == 1, 1, 0)
+  
   data$watr <- factor(data$watr, levels = 1:3, labels = c("Municipality supply_piped",
                                                           "Own arrangement by pump",
                                                           "Tube well"))
@@ -548,7 +559,7 @@ prep_provide_data <- function(){
                         wk52_ageday = "Week 52 age days",
                         non_rotads_elisa_wk91 = "Dirrhea episode not attributed to rotavirus ELISA - week 91",
                         any_rotads_elisa_wk91 = "Any rotavirus diarrhea episode ELISA - week 91",
-                        any_rotads_afe_wk91 = "Any rotavirus diarrhea episode TAC - week 91",
+                        any_rotads_tac_wk91 = "Any rotavirus diarrhea episode TAC - week 91",
                         any_abx_wk91 = "Antibiotics for any diarrhea episode - week 91",
                         non_rotads_elisa_wk52 = "Dirrhea episode not attributed to rotavirus ELISA - week 52",
                         any_rotads_elisa_wk52 = "Any rotavirus diarrhea episode ELISA - week 52",
@@ -600,18 +611,22 @@ asymp <- readxl::read_xlsx(here::here("raw_data/Copy of Merged Data_with dates_a
 # asymp summary dataset with any asymp infection after week 18 
 asymp_18_52 <- asymp %>%
   filter(Week >= 18) %>%
+  mutate(Ct_less30 = ifelse(Rota_Cq < 30, 1, 0)) %>%
   group_by(SID) %>%
   mutate(
     fdate_less40 = if (any(Ct_less40 == 1)) min(Visit_Date[Ct_less40 == 1]) else as.POSIXct(NA),
     fdate_less36 = if (any(Ct_less36 == 1)) min(Visit_Date[Ct_less36 == 1]) else as.POSIXct(NA),
-    fdate_less34 = if (any(Ct_less34 == 1)) min(Visit_Date[Ct_less34 == 1]) else as.POSIXct(NA)
+    fdate_less34 = if (any(Ct_less34 == 1)) min(Visit_Date[Ct_less34 == 1]) else as.POSIXct(NA),
+    fdate_less30 = if (any(Ct_less30 == 1)) min(Visit_Date[Ct_less30 == 1]) else as.POSIXct(NA)
   ) %>%
   summarise(any_asymp_Ct_less40 = if_else(any(Ct_less40 == 1), 1 , 0),
             any_asymp_Ct_less36 = if_else(any(Ct_less36 == 1), 1 , 0),
             any_asymp_Ct_less34 = if_else(any(Ct_less34 == 1), 1 , 0),
+            any_asymp_Ct_less30 = if_else(any(Ct_less30 == 1), 1 , 0),
             fdate_less40 = fdate_less40[1],
             fdate_less36 = fdate_less36[1],
-            fdate_less34 = fdate_less34[1]) %>%
+            fdate_less34 = fdate_less34[1],
+            fdate_less30 = fdate_less30[1]) %>%
   ungroup() %>%
   rename("sid" = SID)
 # this is 1:1 when filtering to episodes week 18 to 52 (N = 270)
@@ -641,7 +656,8 @@ asymp_filtered_merged <- left_join(asymp_18_52, data, by = "sid")
 asymp_filtered_merged <- asymp_filtered_merged %>%
   mutate(ftime_asymp_40 = as.integer(difftime(fdate_less40, enr_date)),
          ftime_asymp_36 = as.integer(difftime(fdate_less36, enr_date)),
-         ftime_asymp_34 = as.integer(difftime(fdate_less34, enr_date)))
+         ftime_asymp_34 = as.integer(difftime(fdate_less34, enr_date)),
+         ftime_asymp_30 = as.integer(difftime(fdate_less30, enr_date)))
 
 # Add single variable for asymptomatic vs symptomatic vs no infection and ftime
 final_data <- asymp_filtered_merged %>%
@@ -672,7 +688,26 @@ final_data <- asymp_filtered_merged %>%
       ftime52 <= ftime_asymp_34 ~ 2                                         # Both: symptomatic occurred first or same day
     ),
     ftime_all_34 = ifelse(all_inf_34 == 0, ftime52, # censoring age (week 52 visit time) stored in ftime52 if no infection
-                          ifelse(all_inf_34 == 1, ftime_asymp_34, ftime52))
+                          ifelse(all_inf_34 == 1, ftime_asymp_34, ftime52)),
+    all_inf_30 = case_when(
+      (any_rotads_elisa_wk52 == 0) & (any_asymp_Ct_less30 == 0) ~ 0,        # No infection
+      (any_rotads_elisa_wk52 == 0) & (any_asymp_Ct_less30 == 1) ~ 1,        # Only asymptomatic
+      (any_rotads_elisa_wk52 == 1) & (any_asymp_Ct_less30 == 0) ~ 2,        # Only symptomatic
+      ftime_asymp_30 < ftime52 ~ 1,                                         # Both: asymptomatic occurred first
+      ftime52 <= ftime_asymp_30 ~ 2                                         # Both: symptomatic occurred first or same day
+    ),
+    ftime_all_30 = ifelse(all_inf_30 == 0, ftime52, # censoring age (week 52 visit time) stored in ftime52 if no infection
+                          ifelse(all_inf_30 == 1, ftime_asymp_30, ftime52)),
+    # AFE to define symptomatic infection, cutoff of 30 to define asymptomatic infection
+    all_inf_30_AFE = case_when(
+      (any_rotads_afe_wk52 == 0) & (any_asymp_Ct_less30 == 0) ~ 0,        # No infection
+      (any_rotads_afe_wk52 == 0) & (any_asymp_Ct_less30 == 1) ~ 1,        # Only asymptomatic
+      (any_rotads_afe_wk52 == 1) & (any_asymp_Ct_less30 == 0) ~ 2,        # Only symptomatic
+      ftime_asymp_30 < ftime52_tac ~ 1,                                         # Both: asymptomatic occurred first
+      ftime52_tac <= ftime_asymp_30 ~ 2                                         # Both: symptomatic occurred first or same day
+    ),
+    ftime_all_30_AFE = ifelse(all_inf_30 == 0, ftime52_afe, # censoring age (week 52 visit time) stored in ftime52 if no infection
+                          ifelse(all_inf_30 == 1, ftime_asymp_30, ftime52_afe)),
   )
 
 saveRDS(final_data, file = here::here("analysis_data/ve_nai_provide.Rds"))

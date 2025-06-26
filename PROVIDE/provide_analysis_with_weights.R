@@ -16,13 +16,15 @@ provide_data <- provide_data[-which(is.na(provide_data$wk10_haz)),]
 provide_data$symp_ind_40 <- ifelse(provide_data$all_inf_40 == 2, 1, 0)
 provide_data$symp_ind_36 <- ifelse(provide_data$all_inf_36 == 2, 1, 0)
 provide_data$symp_ind_34 <- ifelse(provide_data$all_inf_34 == 2, 1, 0)
+provide_data$symp_ind_30 <- ifelse(provide_data$all_inf_30 == 2, 1, 0)
+provide_data$symp_ind_30_AFE <- ifelse(provide_data$all_inf_30_AFE == 2, 1, 0)
 
 provide_data$vax <- provide_data$rotaarm
 
 # 2 = symptomatic
-symp_cox_fit <- survival::coxph(survival::Surv(ftime_all_40, all_inf_40 == 2) ~ vax + 
-                                  gender + wk10_haz + num_hh_lt_5 + num_hh_sleep + fedu_bin + medu_bin +
-                                  inco + gas + tv + toil_bin + food_avail_bin, 
+symp_cox_fit <- survival::coxph(survival::Surv(ftime_all_30, all_inf_30 == 2) ~ vax * (wk10_haz + num_hh_lt_5 + toil_bin + 
+                                  gender + num_hh_sleep + fedu_bin + medu_bin +
+                                  inco + gas + tv + food_avail_bin), 
                                 data = provide_data,
                                 weights = provide_data$weight)
 
@@ -31,19 +33,19 @@ symp_cox_fit <- survival::coxph(survival::Surv(ftime_all_40, all_inf_40 == 2) ~ 
 #                  Loglik converged before variable  9,15 ; coefficient may be infinite. 
 
 # 2 = asymptomatic
-asymp_cox_fit <- survival::coxph(survival::Surv(ftime_all_40, all_inf_40 == 1) ~ vax + 
-                                   gender + wk10_haz + num_hh_lt_5 + num_hh_sleep + fedu_bin + medu_bin +
-                                   inco + gas + tv + toil_bin + food_avail_bin, 
+asymp_cox_fit <- survival::coxph(survival::Surv(ftime_all_30, all_inf_30 == 1) ~ vax * (wk10_haz + num_hh_lt_5 + toil_bin + 
+                                   gender + num_hh_sleep + fedu_bin + medu_bin +
+                                      inco + gas + tv + food_avail_bin), 
                                  data = provide_data,
                                  weights = provide_data$weight)
 
 symp_lr_fit <- glm(
-  symp_ind_40 ~ vax + 
-    gender + wk10_haz + num_hh_lt_5 + num_hh_sleep + fedu_bin + medu_bin +
-    inco + gas + tv + toil_bin + food_avail_bin, 
+  symp_ind_30 ~ vax * (wk10_haz + num_hh_lt_5 + toil_bin + 
+    gender + num_hh_sleep + fedu_bin + medu_bin +
+       inco + gas + tv + food_avail_bin), 
   # subset to infected ptcpt only
-  data = provide_data[provide_data$all_inf_40 > 0, ],
-  weights = provide_data$weight[provide_data$all_inf_40 > 0],
+  data = provide_data[provide_data$all_inf_30 > 0, ],
+  weights = provide_data$weight[provide_data$all_inf_30 > 0],
   family = stats::binomial()
 )
 

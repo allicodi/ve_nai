@@ -39,6 +39,7 @@ ve_from_fits <- function(
   data0 <- data; data0$vax <- 0
   lp_symp_vax0 <- predict(symp_cox_fit, newdata = data0, type = "lp")
   lp_asymp_vax0 <- predict(asymp_cox_fit, newdata = data0, type = "lp")
+  # P(Y_S = 1 | V = 0,  X = x)
   p_symp__inf_vax0 <- predict(
     symp_lr_fit, newdata = data0, type = "response"
   )
@@ -51,6 +52,7 @@ ve_from_fits <- function(
   )
   
   # conditional cumulative incidence any infection under no vaccine/vaccine
+  # P(Y_I = 1 | V = v, X = x)
   ci_inf_vax0 <- mapply(
     hazard_symp = surv_data$hazard_symp,
     hazard_asymp = surv_data$hazard_asymp,
@@ -66,10 +68,18 @@ ve_from_fits <- function(
     }
   )
   
+  # P(Y_I = 1 | V = 0, X = X_i), i = 1,...,n = ci_inf_vax0
+  # P(Y_I = 1 | V = 1, X = X_i), i = 1,...,n = ci_inf_vax1
+  # P(Y_S = 1 | V = 0, X = X_i), i = 1,...,n = p_symp__inf_vax0
+  # P(Y_S = 1 | V = 1, X = X_i), i = 1,...,n = p_symp__inf_vax1
+  
   # marginal parameters any infection
+  # E[P(Y_I = 1 | V = 0, X)]
   marg_ci_inf_vax0 <- colMeans(ci_inf_vax0)
+  # E[P(Y_I = 1 | V = 1, X)]
   marg_ci_inf_vax1 <- colMeans(ci_inf_vax1)
   ve_any_inf <- 1 - marg_ci_inf_vax1 / marg_ci_inf_vax0
+  # VE_I(X_i) = 1 - ci_inf_vax1[i,] / ci_inf_vax0[i,]
   
   # conditional cumulative incidence symptomatic infection under no vaccine/vaccine
   ci_symp_inf_vax0 <- apply(ci_inf_vax0, 2, function(ci_inf){
@@ -85,12 +95,14 @@ ve_from_fits <- function(
   ve_symp_inf <- 1 - marg_ci_symp_vax1 / marg_ci_symp_vax0
   
   # conditional cumulative incidence asymptomatic infection under no vaccine/vaccine
+  # denominator for VE_NAI (and VE_AI)
   ci_asymp_inf_vax0 <- apply(ci_inf_vax0, 2, function(ci_inf){
     ci_inf * ( 1 - p_symp__inf_vax0 )
   })
   ci_asymp_inf_vax1_for_veai <- apply(ci_inf_vax1, 2, function(ci_inf){
     ci_inf * ( 1 - p_symp__inf_vax1 )
   })
+  # usual numerator for VE_NAI
   ci_asymp_inf_vax1_for_venai <- apply(ci_inf_vax1, 2, function(ci_inf){
     ci_inf * ( 1 - p_symp__inf_vax0 )
   })

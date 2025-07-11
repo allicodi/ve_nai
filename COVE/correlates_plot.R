@@ -2,21 +2,21 @@
 # Plot correlates VE NAI
 # ------------------------------------------------------------------------------
 
-here::i_am("ve_nai/correlates_plot.R")
+here::i_am("COVE/correlates_plot.R")
 
 library(tidyverse)
 library(wCorr)
 
-source(here::here("ve_nai/ve_from_fits.R"))
+source(here::here("COVE/ve_from_fits.R"))
 
 # Read correlates data
 # corr_data <- read.csv("/Volumes/trials/covpn/p3001/analysis/correlates/Part_A_Blinded_Phase_Data/adata/P3001ModernaCOVEimmunemarkerdata_correlates_processed_v1.1_lvmn_added_Jan14_2022.csv")
-corr_data <- readRDS(here::here("raw_data/P3001ModernaCOVEimmunemarkerdata_correlates_processed_v1.1_lvmn_added_Jan14_2022.Rds")) %>%
+corr_data <- readRDS(here::here("COVE/raw_data/P3001ModernaCOVEimmunemarkerdata_correlates_processed_v1.1_lvmn_added_Jan14_2022.Rds")) %>%
   rename('SUBJID' = Ptid) %>%
   select(-c("Age", "Sex", "HighRiskInd", "EthnicityHispanic", "EthnicityNotreported", "EthnicityUnknown", "Black", "Asian", "NatAmer", "PacIsl", "Multiracial"))
 
 # Read in prepped analytic dataset
-cove_data <- readRDS(here::here("analytic_data/final_asymp_data.Rds"))
+cove_data <- readRDS(here::here("COVE/analytic_data/final_asymp_data.Rds"))
 
 # Merge on ID
 data <- left_join(cove_data, corr_data, by = "SUBJID")
@@ -241,3 +241,4 @@ helpedplus_plots <- plot_correlates(p_helpedplus_X,
                                 case_type_var = "case_type",
                                 data_type = "vaccine", 
                                 p_type = "P(Helped Plus)")
+

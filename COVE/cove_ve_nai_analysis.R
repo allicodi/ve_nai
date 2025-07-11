@@ -2,9 +2,9 @@
 # Test David's code w/ real COVE data
 # ----------------------------------------------------------------------------
 
-here::i_am("cove_ve_nai_analysis.R")
+here::i_am("COVE/cove_ve_nai_analysis.R")
 
-cove_data <- readRDS(here::here("analytic_data/final_asymp_data.Rds"))
+cove_data <- readRDS(here::here("COVE/analytic_data/final_asymp_data.Rds"))
 
 symp_cox_fit <- survival::coxph(survival::Surv(ftime, ftype == 1) ~ vax + 
                                   Age + Sex + HighRiskInd + 
@@ -344,3 +344,4 @@ at_risk <- sapply(t0, function(t) mean(cove_data$ftime > t))
 
 plot_data <- data.frame(t0 = t0, at_risk = at_risk)
 plot(x = t0, y = at_risk, type = 'l', xlab = 't0', ylab = "Fraction of participants at risk")
+

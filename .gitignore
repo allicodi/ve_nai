@@ -4,3 +4,4 @@ PROVIDE/analysis_data
 COVE/raw_data
 COVE/analytic_data
 COVE/ve_nai_results.csv
+*.Rhistory*

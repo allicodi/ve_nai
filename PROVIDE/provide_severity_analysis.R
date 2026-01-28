@@ -4,12 +4,18 @@
 
 here::i_am("PROVIDE/provide_severity_analysis.R")
 
+library(survival)
+library(cmprsk)
+
 devtools::load_all("../VEnai/")
 
 data <- readRDS(here::here("PROVIDE/analysis_data/provide_severity_pp.Rds"))
 
 # drop obs missing wk10haz
 data <- data[-which(is.na(data$wk10_haz)),]
+
+# drop obs with missing followup time? -- go back and check why NA
+data <- data[-which(is.na(data$ftime52)),]
 
 results <-  ve_nai(data = data,
                    vax_name = "rotaarm",
@@ -21,6 +27,12 @@ results <-  ve_nai(data = data,
                    covariate_names = c("wk10_haz", "num_hh_lt_5", "toil_bin",
                                        "gender", "num_hh_sleep", "fedu_bin", 
                                        "medu_bin", "inco", "gas", "tv",
-                                       "food_avail_bin"),
+                                       "food_avail_bin", "watr_bin",
+                                       "I_iga_measured","I_iga_measured_x_cont", "I_iga_measured_x_bin"),
                    t0 = 365,
-                   n_boot = 1000)
+                   n_boot = 1000, 
+                   bounds = TRUE,
+                   sensitivity = TRUE,
+                   delta = exp(seq(log(1/1.25),log(1.25),length=19)))
+
+saveRDS(results, here::here("PROVIDE/results/sensititvity_results.Rds"))

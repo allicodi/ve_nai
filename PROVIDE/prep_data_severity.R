@@ -180,6 +180,10 @@ prep_provide_data_severe <- function(){
   # Toilet
   # Food availability
   
+  # NEW:
+  # continuous IgA @ week 6
+  # binary IgA < 20 @ week 6
+  
   sub_ses <- bv_ses_water_f10 %>%
     select(sid,
            sb5y,
@@ -194,7 +198,21 @@ prep_provide_data_severe <- function(){
            toil,
            hhfd)
   
-  data <- left_join(data, sub_ses, by = "sid")
+  sub_iga <- lab_bv_rpliga_f10 %>%
+    filter(vstnum == 2) %>%   # filter to week 6 visit (2 = week 6)
+    select(sid, uperml2) %>%  # select sid and endpoint titer highlighted for analysis
+    mutate(iga_cont = uperml2,
+           iga_bin = if_else(iga_cont >= 20, 1, 0)) %>%
+    select(-uperml2)
+  
+  data <- left_join(data, sub_ses, by = "sid") %>%
+    left_join(sub_iga, by = "sid")
+  
+  # Make missingness var for IgA
+  data <- data %>%
+    mutate(I_iga_measured = if_else(is.na(iga_cont), 0, 1),
+           I_iga_measured_x_cont = if_else(is.na(iga_cont), 0, iga_cont),
+           I_iga_measured_x_bin = if_else(is.na(iga_bin), 0, iga_bin))
   
   # Transform factors 
   data$gender <- factor(data$gender)
@@ -401,7 +419,12 @@ prep_provide_data_severe <- function(){
                         toil = "Primary toilet facility",
                         toil_bin = "Improved toilet (=1 yes, =0 no)",
                         food_avail = "Household food availability",
-                        food_avail_bin = "Food availability (=0 deficit, =1 non-deficit)")
+                        food_avail_bin = "Food availability (=0 deficit, =1 non-deficit)",
+                        iga_cont = "IgA endpoint titer U/mL",
+                        iga_bin = "I(IgA endpoint titer >= 20U/mL)",
+                        I_iga_measured = "Indicator IgA measured (non-missing)",
+                        I_iga_measured_x_cont = "Indicator not missing * continuous",
+                        I_iga_measured_x_bin = "Indicator not missing * binary")
   
   return(data)
   

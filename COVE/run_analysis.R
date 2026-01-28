@@ -4,6 +4,9 @@
 
 here::i_am("COVE/run_analysis.R")
 
+library(survival)
+library(cmprsk)
+
 # Source VE functions, bootstrap functions
 # source(here::here("COVE/R/ve_nai.R"))
 # source(here::here("COVE/R/ve_from_fits.R"))
@@ -14,6 +17,14 @@ devtools::load_all(here::here("../VEnai/"))
 
 # Load data
 cove_data <- readRDS(here::here("COVE/analytic_data/final_asymp_data.Rds"))
+
+#debug(ve_nai_sensitivity)
+
+# original
+#delta <- exp(seq(log(0.1), log(3.5), length.out = 35))
+
+# new
+delta <- exp(seq(log(1/3), log(3), length.out = 23))
 
 results <- ve_nai(data = cove_data,
                  vax_name = "vax",
@@ -26,10 +37,14 @@ results <- ve_nai(data = cove_data,
                                      "Black", "Asian", "NatAmer", 
                                      "PacIsl", "Multiracial", "RaceOther",
                                      "RaceNotreported", "RaceUnknown"),
-                 t0 = c(175, 180, 185, 190, 195, 200),
-                 n_boot = 10,
-                 return_models = FALSE)
+                 t0 = c(185),
+                 n_boot = 1000,
+                 bounds = TRUE,
+                 sensitivity = TRUE,
+                 return_models = FALSE,
+                 delta = delta)
 
+saveRDS(results, here::here("COVE/results/sensititvity_results.Rds"))
 
 # -------------------------------------------------------------------------------
 # Old code

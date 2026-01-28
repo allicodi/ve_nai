@@ -2,12 +2,14 @@
 # VE-NAI analysis adding in weights
 # ----------------------------------------------
 
-here::i_am("provide_analysis_with_weights.R")
+here::i_am("PROVIDE/provide_analysis_with_weights.R")
+
+devtools::load_all("../VEnai/")
 
 #cove_data <- readRDS(here::here("analytic_data/final_asymp_data.Rds"))
 
 # provide data with weights
-provide_data <- readRDS(here::here("analysis_data/ve_nai_provide.Rds"))
+provide_data <- readRDS(here::here("PROVIDE/analysis_data/ve_nai_provide.Rds"))
 
 # drop one obs with missing wk10 (baseline) haz
 provide_data <- provide_data[-which(is.na(provide_data$wk10_haz)),]
@@ -21,10 +23,34 @@ provide_data$symp_ind_30_AFE <- ifelse(provide_data$all_inf_30_AFE == 2, 1, 0)
 
 provide_data$vax <- provide_data$rotaarm
 
+results <- ve_nai(data = provide_data,
+                  vax_name = "rotaarm",
+                  time_name = "ftime_all_30",
+                  symp_ind_name = "symp_ind_30",
+                  event_name = "all_inf_30",
+                  symp_level = 2,
+                  asymp_level = 1,
+                  covariate_names = c("wk10_haz", "num_hh_lt_5", "toil_bin",
+                                      "gender", "num_hh_sleep", "fedu_bin", 
+                                      "medu_bin", "inco", "gas", "tv",
+                                      "food_avail_bin"),
+                  weight_name = "weight",
+                  t0 = 365,
+                  n_boot = 1000)
+
+# ----------------------------------------------------------------------------
+# Old
+
 # 2 = symptomatic
-symp_cox_fit <- survival::coxph(survival::Surv(ftime_all_30, all_inf_30 == 2) ~ vax * (wk10_haz + num_hh_lt_5 + toil_bin + 
-                                  gender + num_hh_sleep + fedu_bin + medu_bin +
-                                  inco + gas + tv + food_avail_bin), 
+# symp_cox_fit <- survival::coxph(survival::Surv(ftime_all_30, all_inf_30 == 2) ~ vax * (wk10_haz + num_hh_lt_5 + toil_bin + 
+#                                   gender + num_hh_sleep + fedu_bin + medu_bin +
+#                                   inco + gas + tv + food_avail_bin), 
+#                                 data = provide_data,
+#                                 weights = provide_data$weight)
+
+symp_cox_fit <- survival::coxph(survival::Surv(ftime_all_30, all_inf_30 == 2) ~ vax + (wk10_haz + num_hh_lt_5 + toil_bin + 
+                                                                                         gender + num_hh_sleep + fedu_bin + medu_bin +
+                                                                                         inco + gas + tv + food_avail_bin), 
                                 data = provide_data,
                                 weights = provide_data$weight)
 
@@ -32,15 +58,15 @@ symp_cox_fit <- survival::coxph(survival::Surv(ftime_all_30, all_inf_30 == 2) ~ 
 #   In coxph.fit(X, Y, istrat, offset, init, control, weights = weights,  :
 #                  Loglik converged before variable  9,15 ; coefficient may be infinite. 
 
-# 2 = asymptomatic
-asymp_cox_fit <- survival::coxph(survival::Surv(ftime_all_30, all_inf_30 == 1) ~ vax * (wk10_haz + num_hh_lt_5 + toil_bin + 
+# 1 = asymptomatic
+asymp_cox_fit <- survival::coxph(survival::Surv(ftime_all_30, all_inf_30 == 1) ~ vax + (wk10_haz + num_hh_lt_5 + toil_bin + 
                                    gender + num_hh_sleep + fedu_bin + medu_bin +
                                       inco + gas + tv + food_avail_bin), 
                                  data = provide_data,
                                  weights = provide_data$weight)
 
 symp_lr_fit <- glm(
-  symp_ind_30 ~ vax * (wk10_haz + num_hh_lt_5 + toil_bin + 
+  symp_ind_30 ~ vax + (wk10_haz + num_hh_lt_5 + toil_bin + 
     gender + num_hh_sleep + fedu_bin + medu_bin +
        inco + gas + tv + food_avail_bin), 
   # subset to infected ptcpt only
